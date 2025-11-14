@@ -7,12 +7,12 @@ using namespace std;
 
 int main() {
 
-    hashclass poop;
-    poop.readData("100000-most-common-passwords.txt");
-    auto searchresult = poop.search("test");
+    hashclass myhashtable;
+    myhashtable.readData("100000-most-common-passwords.txt");
+    auto searchresult = myhashtable.search("test");
     cout << searchresult.first << " " <<  endl;
     cout << searchresult.second << " nanoseconds" << endl;
-    poop.clearvec();
+    myhashtable.clearvec();
 
     return 0;
 }

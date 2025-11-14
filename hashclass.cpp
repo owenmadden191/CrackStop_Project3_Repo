@@ -5,7 +5,6 @@ hashclass::hashclass():hashtable(100){
     count = 0.0;
 };
 
-//combined later
 //hashing function
 int hashclass::hashFun(string pass) {
     int answer = 0;
@@ -60,17 +59,6 @@ void hashclass::printtable() { //prints out hashtable, only for debug
         cout << endl;
     }
 }
-//original search without lookup time
-/*bool hashclass::search(string pass) {
-    int temp_pass = hashFun(pass);
-    int index = hashindex(temp_pass);
-    for (int j = 0; j < hashtable[index].getNodeCount(); j++ ) {
-        if (hashtable[index].getNode(j)->data == pass) {
-            return true;
-        }
-    }
-    return false;
-}*/
 
 pair<bool,int64_t> hashclass::search(string pass) { //returns if present and lookup time in ns
     auto start = chrono::high_resolution_clock::now();
