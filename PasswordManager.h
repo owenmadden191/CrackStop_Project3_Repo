@@ -10,9 +10,7 @@ public:
     PasswordManager() = default;
 
     bool loadBannedPasswords(const std::string& filename);
-
     bool userExists(const std::string& username) const;
-
     bool addNewPassword(const std::string& username,
                         const std::string& password,
                         std::string& errorMessage);
@@ -28,8 +26,8 @@ private:
 
     std::string hashPassword(const std::string& password) const;
 
+public:
     std::unordered_map<std::string, std::string> userPasswordDB;
-
     std::unordered_set<std::string> bannedPasswords;
 };
 

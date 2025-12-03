@@ -1,85 +1,90 @@
 #include "List.h"
-#include <iostream>
 
-//single linked list based on Module 3 Single Linked List Video and Programming 2 Project 1 code
-using namespace std;
+List::List() : head(nullptr), tail(nullptr), node_count(0) {}
 
-bool List::isEmpty() {
+bool List::isEmpty() const {
     return head == nullptr;
 }
 
 void List::push_front(const string& x) {
-    Node *newNode = new Node(x);
-    if (isEmpty())
+    Node* newNode = new Node(x);
+    if (head == nullptr) {
         head = tail = newNode;
-    else {
-        newNode -> next = head;
+    } else {
+        newNode->next = head;
         head = newNode;
     }
-    node_count++;
+    ++node_count;
 }
 
-Node* List::getNode(unsigned int index)
-{
-    Node* newnode;
-    if (index >= node_count)
-    {
-        throw out_of_range("Out of Range");
+Node* List::getNode(unsigned int index) const {
+    if (index >= node_count) {
+        return nullptr;
     }
-    newnode = head;
-    for (unsigned int i=0 ; i < index; i++)
-        newnode = newnode->next;
-    return newnode;
+    Node* current = head;
+    unsigned int i = 0;
+    while (current != nullptr && i < index) {
+        current = current->next;
+        ++i;
+    }
+    return current;
 }
 
-unsigned int List::getNodeCount() {
+unsigned int List::getNodeCount() const {
     return node_count;
 }
 
-List::List(const List& rhs) //copy constructor
-{
-    node_count = 0;
-    head = nullptr;
-    tail = nullptr;
-
-    Node* currentnode = rhs.head;
-    while(currentnode != nullptr)
-    {
-        push_front(currentnode->data);
-        currentnode=currentnode->next;
+List::List(const List& rhs) : head(nullptr), tail(nullptr), node_count(0) {
+    Node* current = rhs.head;
+    while (current != nullptr) {
+        Node* newNode = new Node(current->data);
+        if (head == nullptr) {
+            head = tail = newNode;
+        } else {
+            tail->next = newNode;
+            tail = newNode;
+        }
+        ++node_count;
+        current = current->next;
     }
 }
 
+List& List::operator=(const List& rhs) {
+    if (this == &rhs) return *this;
 
-List& List::operator=(const List& rhs){ //assignment operator
-    Node* currentnode = head;
-    while(currentnode!=nullptr)
-    {
-        Node* tempnode = currentnode->next;
-        delete currentnode;
-        currentnode = tempnode;
+    // clear existing
+    Node* cur = head;
+    while (cur != nullptr) {
+        Node* tmp = cur->next;
+        delete cur;
+        cur = tmp;
     }
     head = tail = nullptr;
-
     node_count = 0;
-    Node* newnode = rhs.head;
-    while(newnode != nullptr)
-    {
-        push_front(newnode->data);
-        newnode=newnode->next;
-    }
 
+    // copy from rhs
+    Node* current = rhs.head;
+    while (current != nullptr) {
+        Node* newNode = new Node(current->data);
+        if (head == nullptr) {
+            head = tail = newNode;
+        } else {
+            tail->next = newNode;
+            tail = newNode;
+        }
+        ++node_count;
+        current = current->next;
+    }
     return *this;
 }
 
-List::~List() { //destructor
-    Node* currentnode = head;
-    while (currentnode != nullptr) {
-        Node* tempnode = currentnode-> next;
-        delete currentnode;
-        currentnode = tempnode;
+List::~List() {
+    Node* current = head;
+    while (current != nullptr) {
+        Node* tmp = current->next;
+        delete current;
+        current = tmp;
     }
     head = tail = nullptr;
     node_count = 0;
 }
-

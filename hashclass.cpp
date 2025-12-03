@@ -1,83 +1,134 @@
 #include "hashclass.h"
+#include <fstream>
 
-hashclass::hashclass():hashtable(100){
-    loadfactor = .8;
-    count = 0.0;
-};
+hashclass::hashclass() : loadfactor(0.8), count(0.0), hashtable(100) {}
 
-//hashing function
-int hashclass::hashFun(string pass) {
-    int answer = 0;
-    for (int i = 0; i < pass.length() ;i++) {
-        int asciiValue =pass[i];
-        answer += asciiValue;
+int hashclass::hashFun(const string& pass) const {
+    // Simple additive hash; index is computed as hash % table_size
+    int h = 0;
+    for (unsigned char c : pass) {
+        h += static_cast<int>(c);
     }
-    return answer;
+    if (h < 0) h = -h;
+    return h;
 }
 
-//creates index
-int hashclass::hashindex(int hashcode) {
-    return hashcode % hashtable.size();
-}
+void hashclass::insert(const string& pass) {
+    if (hashtable.empty()) {
+        hashtable.resize(100);
+    }
 
-//insert items into vector
-void hashclass::insert(string pass) {
-    int temp_pass = hashFun(pass);
-    int index = hashindex(temp_pass);
-    hashtable[index].push_front(pass);
-    count++;
-    double spaceut = count/hashtable.size();
-    if (spaceut >= loadfactor) {
+    double currentLoadFactor = 0.0;
+    if (!hashtable.empty()) {
+        currentLoadFactor = count / static_cast<double>(hashtable.size());
+    }
+    if (currentLoadFactor > loadfactor) {
         rehash();
     }
+
+    int index = hashFun(pass) % static_cast<int>(hashtable.size());
+    hashtable[index].push_front(pass);
+    ++count;
+}
+
+pair<bool, int64_t> hashclass::search(const string& pass) {
+    using namespace std::chrono;
+
+    auto start = high_resolution_clock::now();
+
+    if (hashtable.empty()) {
+        auto end = high_resolution_clock::now();
+        auto time = duration_cast<nanoseconds>(end - start);
+        return make_pair(false, time.count());
+    }
+
+    int index = hashFun(pass) % static_cast<int>(hashtable.size());
+    bool present = false;
+
+    const List& bucket = hashtable[index];
+    unsigned int n = bucket.getNodeCount();
+    for (unsigned int i = 0; i < n; ++i) {
+        Node* node = bucket.getNode(i);
+        if (node != nullptr && node->data == pass) {
+            present = true;
+            break;
+        }
+    }
+
+    auto end = high_resolution_clock::now();
+    auto time = duration_cast<nanoseconds>(end - start);
+    return make_pair(present, time.count());
 }
 
 void hashclass::clearvec() {
-    hashtable.clear();
+    for (auto& lst : hashtable) {
+        lst = List();
+    }
+    count = 0.0;
 }
 
 void hashclass::rehash() {
-    vector<List> newhashtable(hashtable.size()*2);
-    for (int i = 0; i < hashtable.size(); i ++) {
-        for (int j = 0; j < hashtable[i].getNodeCount(); j++ ){
-            if (hashtable[i].getNode(j) != nullptr) {
-                int temp_pass = hashFun(hashtable[i].getNode(j)->data);
-                int index = temp_pass%newhashtable.size();
-                newhashtable[index].push_front(hashtable[i].getNode(j)->data);
+    // Double the table size and re-insert all elements
+    size_t newSize = hashtable.empty() ? 100 : hashtable.size() * 2;
+    vector<List> newTable(newSize);
+
+    for (const auto& bucket : hashtable) {
+        unsigned int n = bucket.getNodeCount();
+        for (unsigned int i = 0; i < n; ++i) {
+            Node* node = bucket.getNode(i);
+            if (node != nullptr) {
+                const string& val = node->data;
+
+                int h = 0;
+                for (unsigned char c : val) {
+                    h += static_cast<int>(c);
+                }
+                if (h < 0) h = -h;
+                int index = h % static_cast<int>(newSize);
+
+                newTable[index].push_front(val);
             }
         }
     }
-    hashtable=newhashtable;
+
+    hashtable.swap(newTable);
 }
 
-void hashclass::printtable() { //prints out hashtable, only for debug
-    cout << "size: " << hashtable.size() << endl;
-    for (int i = 0; i < hashtable.size(); i ++) {
-        for (int j = 0; j < hashtable[i].getNodeCount(); j++ ) {
-            cout << i << " " << hashtable[i].getNode(j)->data << " ";
+void hashclass::printtable() const {
+    for (size_t i = 0; i < hashtable.size(); ++i) {
+        const List& bucket = hashtable[i];
+        unsigned int n = bucket.getNodeCount();
+        if (n == 0) continue;
+
+        cout << "Bucket " << i << ": ";
+        for (unsigned int j = 0; j < n; ++j) {
+            Node* node = bucket.getNode(j);
+            if (node != nullptr) {
+                cout << node->data << " ";
+            }
         }
-        cout << endl;
+        cout << "\n";
     }
 }
 
-pair<bool,int64_t> hashclass::search(string pass) { //returns if present and lookup time in ns
-    auto start = chrono::high_resolution_clock::now();
-    int temp_pass = hashFun(pass);
-    int index = hashindex(temp_pass);
-    bool present = false;
-    for (int j = 0; j < hashtable[index].getNodeCount(); j++ ) {
-        if (hashtable[index].getNode(j)->data == pass) {
-            present = true;
-        }
-    }
-    auto end = chrono::high_resolution_clock::now();
-    auto time = duration_cast<chrono::nanoseconds>(end-start);
-    return make_pair(present,time.count());
-}
-void hashclass::readData(string filename) {
-    string linefromfile;
+void hashclass::readData(const string& filename) {
     ifstream inFile(filename);
-    while (getline(inFile, linefromfile)) {
-        insert(linefromfile);
+    if (!inFile.is_open()) {
+        cerr << "Error: could not open " << filename << "\n";
+        return;
+    }
+
+    string line;
+    while (std::getline(inFile, line)) {
+        // Trim trailing carriage returns and whitespace so that
+        // lines from the file match user input exactly.
+        while (!line.empty() &&
+               (line.back() == '\r' || line.back() == ' ' || line.back() == '\t')) {
+            line.pop_back();
+        }
+
+        if (!line.empty()) {
+            insert(line);
+        }
     }
 }

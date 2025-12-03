@@ -30,19 +30,17 @@ bool PasswordManager::addNewPassword(const std::string& username,
     }
 
     if (isBannedPassword(password)) {
-        errorMessage = "Password is too common or previously used.";
+        errorMessage = "Password is too common or has been used before.";
         return false;
     }
 
     std::string hashed = hashPassword(password);
     userPasswordDB[username] = hashed;
-
     bannedPasswords.insert(password);
 
     errorMessage.clear();
     return true;
 }
-
 
 bool PasswordManager::meetsComplexityRequirements(const std::string& password,
                                                   const std::string& username,
@@ -58,10 +56,15 @@ bool PasswordManager::meetsComplexityRequirements(const std::string& password,
     bool hasSymbol = false;
 
     for (unsigned char c : password) {
-        if (std::islower(c))      hasLower = true;
-        else if (std::isupper(c)) hasUpper = true;
-        else if (std::isdigit(c)) hasDigit = true;
-        else                      hasSymbol = true;
+        if (std::islower(c)) {
+            hasLower = true;
+        } else if (std::isupper(c)) {
+            hasUpper = true;
+        } else if (std::isdigit(c)) {
+            hasDigit = true;
+        } else {
+            hasSymbol = true;
+        }
     }
 
     if (!hasLower) {
@@ -81,11 +84,10 @@ bool PasswordManager::meetsComplexityRequirements(const std::string& password,
         return false;
     }
 
-    if (!username.empty()) {
-        if (password.find(username) != std::string::npos) {
-            reason = "Password must not contain the username.";
-            return false;
-        }
+    if (!username.empty() &&
+        password.find(username) != std::string::npos) {
+        reason = "Password must not contain the username.";
+        return false;
     }
 
     reason.clear();
@@ -95,7 +97,6 @@ bool PasswordManager::meetsComplexityRequirements(const std::string& password,
 bool PasswordManager::isBannedPassword(const std::string& password) const {
     return bannedPasswords.find(password) != bannedPasswords.end();
 }
-
 
 std::string PasswordManager::hashPassword(const std::string& password) const {
     std::hash<std::string> hasher;
