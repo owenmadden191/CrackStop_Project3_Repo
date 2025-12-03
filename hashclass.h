@@ -1,32 +1,26 @@
-#ifndef HASHCLASS_H
-#define HASHCLASS_H
-
 #include "List.h"
-#include <string>
 #include <vector>
-#include <utility>
-#include <iostream>
 #include <chrono>
-
-using namespace std;
-
+#include <iostream>
+#include <fstream>
 class hashclass {
 public:
     hashclass();
-
-    int hashFun(const string& pass) const;
-
-    void insert(const string& pass);
+    int hashFun(string& pass);
+    int hashindex(int hashcode);
+    void insert(string& pass);
     void clearvec();
     void rehash();
-    void printtable() const;
-    void readData(const string& filename);
-    pair<bool, int64_t> search(const string& pass);
-
+    void printtable();
+    //bool search(string pass);
+    void readData(string filename);
+    pair<bool,int64_t> search(string& pass);
 private:
     double loadfactor;
     double count;
     vector<List> hashtable;
 };
 
-#endif
+
+
+
